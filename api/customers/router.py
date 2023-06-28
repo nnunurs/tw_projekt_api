@@ -5,8 +5,9 @@ from .schema import CustomerCreateSchema, CustomerUpdateSchema, Customer
 
 router = APIRouter()
 
-
 CUSTOMERS_STORAGE = get_customers_storage()
+
+# WSZYSTKIE TRY EXCEPT MOŻNA ZASTĄPIĆ IFAMI ZE SPRAWDZENIEM CZY CUSTOMER_ID JEST W CUSTOMERS_STORAGE
 
 
 @router.get("/")
@@ -28,14 +29,18 @@ async def get_customer(customer_id: int) -> Customer:
 async def update_customer(
     customer_id: int, updated_customer: CustomerUpdateSchema
 ) -> Customer:
-    if customer_id not in CUSTOMERS_STORAGE:
+    try:
+        CUSTOMERS_STORAGE[customer_id] = Customer(
+            **(
+                CUSTOMERS_STORAGE[customer_id].dict()
+                | updated_customer.dict(exclude_unset=True)
+            )
+        )
+        return CUSTOMERS_STORAGE[customer_id]
+    except KeyError:
         raise HTTPException(
             status_code=404, detail=f"Customer with ID={customer_id} does not exist."
         )
-    
-    CUSTOMERS_STORAGE[customer_id] = Customer(**(CUSTOMERS_STORAGE[customer_id].dict() | updated_customer.dict(exclude_unset=True)))
-    return CUSTOMERS_STORAGE[customer_id]
-        
 
 
 @router.delete("/{customer_id}")
