@@ -15,4 +15,4 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(customers.router, prefix="/customers")
+app.include_router(customers.router, prefix="")

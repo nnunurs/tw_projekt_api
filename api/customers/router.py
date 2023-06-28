@@ -1,21 +1,29 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException
 
-from .storage import get_customers_storage
-from .schema import CustomerCreateSchema, CustomerUpdateSchema, Customer
+from .storage import get_customers_storage, get_orders_storage, get_products_storage
+from .schema import (
+    CustomerCreateSchema,
+    CustomerUpdateSchema,
+    Customer,
+    Order,
+    Product,
+)
 
 router = APIRouter()
 
 CUSTOMERS_STORAGE = get_customers_storage()
+ORDERS_STORAGE = get_orders_storage()
+PRODUCT_STORAGE = get_products_storage()
 
-# WSZYSTKIE TRY EXCEPT MOŻNA ZASTĄPIĆ IFAMI ZE SPRAWDZENIEM CZY CUSTOMER_ID JEST W CUSTOMERS_STORAGE
+## WSZYSTKIE TRY EXCEPT MOŻNA ZASTĄPIĆ IFAMI ZE SPRAWDZENIEM CZY DANE ID ISTNIEJE W STORAGE
 
 
-@router.get("/")
+@router.get("/customers")
 async def get_customers() -> list[Customer]:
     return list(get_customers_storage().values())
 
 
-@router.get("/{customer_id}")
+@router.get("/customers/{customer_id}")
 async def get_customer(customer_id: int) -> Customer:
     try:
         return CUSTOMERS_STORAGE[customer_id]
@@ -25,7 +33,7 @@ async def get_customer(customer_id: int) -> Customer:
         )
 
 
-@router.patch("/{customer_id}")
+@router.patch("/customers/{customer_id}")
 async def update_customer(
     customer_id: int, updated_customer: CustomerUpdateSchema
 ) -> Customer:
@@ -43,7 +51,7 @@ async def update_customer(
         )
 
 
-@router.delete("/{customer_id}")
+@router.delete("/customers/{customer_id}")
 async def delete_customer(customer_id: int) -> None:
     try:
         del CUSTOMERS_STORAGE[customer_id]
@@ -53,9 +61,39 @@ async def delete_customer(customer_id: int) -> None:
         )
 
 
-@router.post("/")
+@router.post("/customers")
 async def create_customer(customer: CustomerCreateSchema) -> Customer:
     index = len(CUSTOMERS_STORAGE)
     CUSTOMERS_STORAGE[index] = Customer(id=index, **customer.dict())
 
     return CUSTOMERS_STORAGE[index]
+
+
+@router.get("/orders")
+async def get_orders() -> list[Order]:
+    return list(get_orders_storage().values())
+
+
+@router.get("/orders/{order_id}")
+async def get_order(order_id: int) -> Order:
+    try:
+        return ORDERS_STORAGE[order_id]
+    except KeyError:
+        raise HTTPException(
+            status_code=404, detail=f"Order with ID={order_id} does not exist."
+        )
+
+
+@router.get("/products")
+async def get_products() -> list[Product]:
+    return list(get_products_storage().values())
+
+
+@router.get("/products/{product_id}")
+async def get_product(product_id: int) -> Product:
+    try:
+        return PRODUCT_STORAGE[product_id]
+    except KeyError:
+        raise HTTPException(
+            status_code=404, detail=f"Product with ID={product_id} does not exist."
+        )
